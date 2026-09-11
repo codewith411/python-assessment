@@ -1,3 +1,4 @@
+from typing import Optional
 from pathlib import Path
 from collections import Counter
 import re
@@ -16,10 +17,17 @@ def count_specific_word(text: str, search_word: str) -> int:
         text.lower()
     )
 
-    return sum(word == search_word.lower() for word in words)
+    count = 0
+    index = 0
+    while index < len(words):
+        if words[index] == search_word.lower():
+            count += 1
+        index += 1
+
+    return count
 
 
-def identify_most_common_word(text: str) -> str | None:
+def identify_most_common_word(text: str) -> Optional[str]:
     """
     Identify the word that appears most frequently in the text.
     Return None if the text is empty.
