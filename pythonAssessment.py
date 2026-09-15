@@ -1,185 +1,135 @@
-from typing import Optional
-from pathlib import Path
-from collections import Counter
 import re
 
 
-def count_specific_word(text: str, search_word: str) -> int:
+def count_specific_word(text, search_word):
     """
-    Count how many times a specific word appears in the text.
-    The comparison is case-insensitive.
+    Count occurrences of a specific word using substring matching.
     """
     if not text or not search_word:
         return 0
 
-    words = re.findall(
-        r"[A-Za-z0-9]+(?:['-][A-Za-z0-9]+)*",
-        text.lower()
-    )
-
+    text_lower = text.lower()
+    search_lower = search_word.lower()
     count = 0
-    index = 0
-    while index < len(words):
-        if words[index] == search_word.lower():
-            count += 1
-        index += 1
+    position = 0
+
+    while True:
+        position = text_lower.find(search_lower, position)
+        if position == -1:
+            break
+        count += 1
+        position += len(search_lower)
 
     return count
 
 
-def identify_most_common_word(text: str) -> Optional[str]:
+def identify_most_common_word(text):
     """
-    Identify the word that appears most frequently in the text.
-    Return None if the text is empty.
+    Identify the most common word using regex to extract words.
     """
     if not text.strip():
         return None
 
-    words = re.findall(
-        r"[A-Za-z0-9]+(?:['-][A-Za-z0-9]+)*",
-        text.lower()
-    )
+    words = re.findall(r"\b[a-zA-Z0-9]+\b", text.lower())
 
     if not words:
         return None
 
-    return Counter(words).most_common(1)[0][0]
+    word_counts = {}
+
+    for word in words:
+        if word in word_counts:
+            word_counts[word] += 1
+        else:
+            word_counts[word] = 1
+
+    most_common_word = words[0]
+    highest_count = word_counts[most_common_word]
+
+    for word in words:
+        if word_counts[word] > highest_count:
+            most_common_word = word
+            highest_count = word_counts[word]
+
+    return most_common_word
 
 
-def calculate_average_word_length(text: str) -> float:
+def calculate_average_word_length(text):
     """
-    Calculate the average length of words in the text.
+    Calculate the average length of words.
     Punctuation and special characters are excluded.
     """
     if not text.strip():
         return 0
 
-    words = re.findall(
-        r"[A-Za-z0-9]+(?:['-][A-Za-z0-9]+)*",
-        text
-    )
+    words = re.findall(r"[a-zA-Z0-9]+", text)
 
-    if not words:
+    total_length = 0
+
+    for word in words:
+        total_length += len(word)
+
+    if len(words) == 0:
         return 0
-
-    lengths = [
-        len(word.replace("-", "").replace("'", ""))
-        for word in words
-    ]
-
-    return sum(lengths) / len(lengths)
+    else:
+        return float(total_length / len(words))
 
 
-def count_paragraphs(text: str) -> int:
+def count_paragraphs(text):
     """
-    Count the number of paragraphs.
-    Paragraphs are separated by empty lines.
+    Count paragraphs separated by empty lines.
     """
     if not text.strip():
         return 1
 
-    paragraphs = re.split(
-        r"\n\s*\n",
-        text.strip()
-    )
+    paragraphs = text.strip().split("\n\n")
 
     return len(paragraphs)
 
 
-def count_sentences(text: str) -> int:
+def count_sentences(text):
     """
-    Count the number of sentences.
-    Sentences end with '.', '!' or '?'.
+    Count sentences based on periods, exclamation marks,
+    and question marks.
     """
     if not text.strip():
         return 1
 
-    sentences = re.findall(
-        r"[^.!?]+(?:[.!?]+|$)",
-        text.strip()
-    )
+    sentences = re.findall(r"[^.!?]+[.!?]", text)
 
-    return sum(
-        1
-        for sentence in sentences
-        if sentence.strip()
-    )
+    return len(sentences)
 
 
-def main() -> None:
+def main():
     """
-    Main program that reads the article and displays
-    all text analysis results.
+    Read the news article and display the analysis results.
     """
-
-    article_file = Path("news_article.txt")
 
     try:
-        text = article_file.read_text(
-            encoding="utf-8"
-        )
-
+        with open("news_article.txt", "r", encoding="utf-8") as file:
+            text = file.read()
     except FileNotFoundError:
-        print(f"Error: Could not find '{article_file}'.")
-        print(
-            "Place news_article.txt in the same folder "
-            "as pythonAssessment.py."
-        )
+        print("Error: news_article.txt was not found.")
         return
 
-    print("======================================")
-    print("      NEWS ARTICLE TEXT ANALYSIS")
-    print("======================================")
+    search_word = input("Enter the word you want to count: ").strip()
 
-    search_word = input(
-        "Enter the word you want to count: "
-    ).strip()
-
-    specific_word_count = count_specific_word(
-        text,
-        search_word
-    )
-
-    most_common_word = identify_most_common_word(
-        text
-    )
-
-    average_word_length = calculate_average_word_length(
-        text
-    )
-
+    specific_word_count = count_specific_word(text, search_word)
+    most_common_word = identify_most_common_word(text)
+    average_word_length = calculate_average_word_length(text)
     paragraph_count = count_paragraphs(text)
-
     sentence_count = count_sentences(text)
 
     print()
     print("--------------- RESULTS ---------------")
-
     print(
         f"Occurrences of '{search_word}': "
         f"{specific_word_count}"
     )
-
-    print(
-        f"Most common word: "
-        f"{most_common_word}"
-    )
-
-    print(
-        f"Average word length: "
-        f"{average_word_length:.2f}"
-    )
-
-    print(
-        f"Number of paragraphs: "
-        f"{paragraph_count}"
-    )
-
-    print(
-        f"Number of sentences: "
-        f"{sentence_count}"
-    )
-
+    print(f"Most common word: {most_common_word}")
+    print(f"Average word length: {average_word_length:.2f}")
+    print(f"Number of paragraphs: {paragraph_count}")
+    print(f"Number of sentences: {sentence_count}")
     print("---------------------------------------")
 
 
